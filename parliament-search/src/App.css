@@ -1,0 +1,89 @@
+/* src/App.css */
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+  color: #2c3e50;
+}
+
+.search-container {
+  margin-bottom: 5rem;
+}
+
+.search-input {
+  width: 60%;
+  padding: 12px 20px;
+  font-size: 1.1rem;
+  border: 2px solid #ddd;
+  border-radius: 25px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.search-input:focus {
+  border-color: #646cff;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  text-align: left;
+}
+
+.card {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.speaker-name {
+  color: #2c3e50;
+  margin-bottom: 5px;
+}
+
+.party-badge {
+  font-size: 0.8rem;
+  background-color: #e0e0e0;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+.speech-date {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 15px;
+  display: block;
+}
+
+.keywords-container {
+  margin-top: 15px;
+}
+
+.keyword-tag {
+  display: inline-block;
+  background-color: #e3f2fd;
+  color: #1565c0;
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-right: 5px;
+  margin-bottom: 5px;
+}
