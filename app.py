@@ -22,37 +22,47 @@ def extract_talk_keywords(csv_path, talk_index, top_n=50):
     print("Φόρτωση δεδομένων στο Pandas...")
     try:
         df = pd.read_csv(csv_path)
-        
-        # Έλεγχος αν υπάρχει στήλη speech
         col_name = 'speech' if 'speech' in df.columns else df.columns[-1]
         
-        # 1. Αφαίρεση γραμμών που είναι πραγματικά κενές (NaN)
+        # Καθαρισμός δεδομένων (όπως πριν)
         df = df.dropna(subset=[col_name])
-        
-        # 2. Μετατροπή σε string για ασφάλεια
         df[col_name] = df[col_name].astype(str)
-        
-        # 3. Αφαίρεση γραμμών που έχουν τη λέξη "nan" (αν δημιουργήθηκε από μετατροπή)
         df = df[df[col_name].str.lower() != 'nan']
-        
-        # 4. Αφαίρεση πολύ μικρών κειμένων (π.χ. σκουπίδια κάτω από 3 χαρακτήρες)
         df = df[df[col_name].str.len() > 3]
-        # ------------------------
 
         text_data = df[col_name].tolist()
-
         if not text_data:
             print("Δεν βρέθηκαν δεδομένα κειμένου.")
             return
 
         print(f"Ανάλυση σε {len(text_data)} ομιλίες...")
-        print("Υπολογισμός TF-IDF...")
         
-        # max_df=0.67: Αγνοεί λέξεις που εμφανίζονται στο 85% των εγγράφων
-        tfidf = TfidfVectorizer()
+        # Υπολογισμός TF-IDF
+        tfidf = TfidfVectorizer(max_df=0.85) # max_df για να φιλτράρουμε πολύ κοινές λέξεις
         tfidf_matrix = tfidf.fit_transform(text_data)
-        print(tfidf_matrix.shape)
-        print(tfidf_matrix[talk_index])
+        
+        # 1. Παίρνουμε όλα τα ονόματα των λέξεων (features)
+        feature_names = tfidf.get_feature_names_out()
+
+        # 2. Απομονώνουμε τη συγκεκριμένη ομιλία (γραμμή)
+        # Μετατρέπουμε τη sparse γραμμή σε array και μετά σε λίστα
+        row_data = tfidf_matrix[talk_index].toarray().flatten()
+
+        # 3. Συσχετίζουμε κάθε λέξη με το score της
+        # Δημιουργούμε μια λίστα από tuples: (λέξη, score)
+        word_score_list = []
+        for i in range(len(row_data)):
+            if row_data[i] > 0: # Κρατάμε μόνο λέξεις που υπάρχουν στην ομιλία
+                word_score_list.append((feature_names[i], row_data[i]))
+
+        # 4. Ταξινόμηση (Sorting) με βάση το score (το 2ο στοιχείο του tuple)
+        # reverse=True για να έχουμε τα μεγαλύτερα scores πάνω
+        word_score_list.sort(key=lambda x: x[1], reverse=True)
+
+        # 5. Εκτύπωση αποτελεσμάτων
+        print(f"\n--- Top {top_n} Keywords για την ομιλία #{talk_index} ---")
+        for word, score in word_score_list[:top_n]:
+            print(f"{word:20} : {score:.4f}")
 
     except Exception as e:
         print(f"Προέκυψε σφάλμα κατά την ανάλυση: {e}")
@@ -102,11 +112,7 @@ def analyze_group_keywords(csv_path, group_col, top_n=10):
     return results
 
 def analyze_keywords_over_time(csv_path, target_entity, entity_type='political_party'):
-    """
-    Δείχνει πώς αλλάζουν οι λέξεις-κλειδιά για ένα συγκεκριμένο κόμμα/βουλευτή ανά έτος.
-    target_entity: π.χ. 'νέα δημοκρατία'
-    entity_type: 'political_party' ή 'member_name'
-    """
+
     print(f"\n--- Χρονική Ανάλυση για: {target_entity} ---")
     df = pd.read_csv(csv_path)
     df = df.dropna(subset=['speech', 'sitting_date'])
@@ -175,3 +181,5 @@ def analyze_keywords_over_time(csv_path, target_entity, entity_type='political_p
 create_clean_csv(sample_small_file, clean_file, stopwords_file)
 
 extract_talk_keywords(clean_file, 50)
+
+analyze_group_keywords(clean_file, 'political_party')
