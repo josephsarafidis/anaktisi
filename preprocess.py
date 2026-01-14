@@ -11,6 +11,7 @@ from greek_stemmer import stemmer
 
 INPUT_FILE = "data/Greek_Parliament_Proceedings_1989_2020.csv" 
 CLEAN_FILE = "data/clean.csv"
+FULL_SPEECHES_FILE = "data/clean_full_speeches.csv"
 SAMPLE_FILE = "data/random_sample.csv"
 STOPWORDS_FILE = 'dictionary/stopwords_stemmed.txt'
 
@@ -112,7 +113,7 @@ def process_text_optimized(text, stopwords_list):
 
     return ' '.join(cleaned_words)
 
-def create_clean_csv(file_path, new_file_path, STOPWORDS_FILE):
+def create_clean_csv(file_path, clean_file_path, clean_full_speeches_file_path, STOPWORDS_FILE):
 
     stopwords = load_stopwords(STOPWORDS_FILE)
 
@@ -120,14 +121,17 @@ def create_clean_csv(file_path, new_file_path, STOPWORDS_FILE):
     
     try:
         with open(file_path, mode='r', encoding='utf-8', errors='ignore') as infile, \
-             open(new_file_path, 'w', newline='', encoding='utf-8') as outfile:
+             open(clean_file_path, 'w', newline='', encoding='utf-8') as outfile_clean, \
+            open(clean_full_speeches_file_path, 'w', newline='', encoding='utf-8') as outfile_full:
 
             reader = csv.reader(infile)
-            writer = csv.writer(outfile)
+            writer_clean = csv.writer(outfile_clean)
+            writer_clean_full_speeches = csv.writer(outfile_full)
 
             try:
                 header = next(reader)
-                writer.writerow(header)
+                writer_clean.writerow(header)
+                writer_clean_full_speeches.writerow(header)
             except StopIteration:
                 return
 
@@ -140,22 +144,24 @@ def create_clean_csv(file_path, new_file_path, STOPWORDS_FILE):
                 
                 if not original_speech:
                     row[-1] = ""
-                    writer.writerow(row)
+                    writer_clean.writerow(row)
                     continue
-
+                        
                 row[-1] = process_text_optimized(original_speech, stopwords)
                 if len(row[-1]) >= CHARACTER_LIMIT:
-                    writer.writerow(row)
+                    writer_clean.writerow(row)
+                    row[-1] = original_speech
+                    writer_clean_full_speeches.writerow(row)
                 
                 count += 1
                 if count % 1000 == 0:
                     print(f"Επεξεργάστηκαν {count} γραμμές...", end='\r')
         
-        print(f"\nΟλοκληρώθηκε! Αποθηκεύτηκε στο {new_file_path}")
+        print(f"\nΟλοκληρώθηκε! Αποθηκεύτηκαν στο {clean_file_path} και στο {clean_full_speeches_file_path}")
                     
     except FileNotFoundError:
         print(f"Σφάλμα: Το αρχείο {file_path} δεν βρέθηκε.")
 
 
-create_clean_csv(SAMPLE_FILE, CLEAN_FILE, STOPWORDS_FILE)
+create_clean_csv(SAMPLE_FILE, CLEAN_FILE, FULL_SPEECHES_FILE, STOPWORDS_FILE)
 
