@@ -9,6 +9,12 @@ import random
 from greek_stemmer import stemmer
 
 
+INPUT_FILE = "data/Greek_Parliament_Proceedings_1989_2020.csv" 
+CLEAN_FILE = "data/clean.csv"
+SAMPLE_FILE = "data/random_sample.csv"
+STOPWORDS_FILE = 'dictionary/stopwords_stemmed.txt'
+
+CHARACTER_LIMIT = 50
 
 translator = str.maketrans(string.punctuation + '΄‘’“”«»…–', ' ' * (len(string.punctuation) + 9))
 
@@ -30,11 +36,11 @@ def stemming(preprocessed_data):
         index += 1
     return preprocessed_data1  
 
-def create_random_sample(input_file, output_file, sample_size):
+def create_random_sample(INPUT_FILE, output_file, sample_size):
 
     print("Counting total lines...")
     # PASS 1: Count total lines to determine the range
-    with open(input_file, 'r', encoding='utf-8', errors='ignore') as f:
+    with open(INPUT_FILE, 'r', encoding='utf-8', errors='ignore') as f:
         # Subtract 1 for the header
         total_lines = sum(1 for line in f) - 1
     
@@ -48,7 +54,7 @@ def create_random_sample(input_file, output_file, sample_size):
 
     print(f"Extracting {sample_size} random lines...")
     
-    with open(input_file, 'r', encoding='utf-8', newline='', errors='ignore') as infile, \
+    with open(INPUT_FILE, 'r', encoding='utf-8', newline='', errors='ignore') as infile, \
          open(output_file, 'w', encoding='utf-8', newline='') as outfile:
         
         reader = csv.reader(infile)
@@ -106,9 +112,9 @@ def process_text_optimized(text, stopwords_list):
 
     return ' '.join(cleaned_words)
 
-def create_clean_csv(file_path, new_file_path, stopwords_file):
+def create_clean_csv(file_path, new_file_path, STOPWORDS_FILE):
 
-    stopwords = load_stopwords(stopwords_file)
+    stopwords = load_stopwords(STOPWORDS_FILE)
 
     print(f"Ξεκινάει ο καθαρισμός του αρχείου {file_path}...")
     
@@ -138,8 +144,8 @@ def create_clean_csv(file_path, new_file_path, stopwords_file):
                     continue
 
                 row[-1] = process_text_optimized(original_speech, stopwords)
-                
-                writer.writerow(row)
+                if len(row[-1]) >= CHARACTER_LIMIT:
+                    writer.writerow(row)
                 
                 count += 1
                 if count % 1000 == 0:
@@ -151,5 +157,5 @@ def create_clean_csv(file_path, new_file_path, stopwords_file):
         print(f"Σφάλμα: Το αρχείο {file_path} δεν βρέθηκε.")
 
 
-
+create_clean_csv(SAMPLE_FILE, CLEAN_FILE, STOPWORDS_FILE)
 
