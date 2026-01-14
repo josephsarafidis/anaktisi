@@ -15,7 +15,7 @@ input_file = "data/Greek_Parliament_Proceedings_1989_2020.csv"  # Άλλαξε �
 clean_file = "data/clean.csv"
 sample_file = "data/random_sample.csv"
 sample_small_file = "data/Greek_Parliament_Proceedings_1989_2020_DataSample.csv"
-stopwords_file = 'data/stopwords_stemmed.txt'
+stopwords_file = 'dictionary/stopwords_stemmed.txt'
 csv.field_size_limit(sys.maxsize)
 
 def extract_talk_keywords(csv_path, talk_index, top_n=50):
