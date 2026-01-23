@@ -10,10 +10,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sklearn.metrics.pairwise import cosine_similarity
 from greek_stemmer import stemmer
 
-# --- 1. SETUP & PATHS ---
+#Python API for the web application. Implements /search and /trend
+
 app = FastAPI()
 
-# Ρύθμιση CORS
 origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
 app.add_middleware(
     CORSMiddleware,
@@ -23,16 +23,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# === ΤΟ ΚΛΕΙΔΙ ΓΙΑ ΤΟ DOCKER ===
-# Βρίσκουμε πού είναι ΑΥΤΟ το αρχείο (api.py) -> /app/src
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Υπολογίζουμε τον φάκελο public relative με το src -> /app/public
 PUBLIC_DIR = os.path.join(BASE_DIR, '..', 'public')
 
 print(f"DEBUG: Base Directory is {BASE_DIR}")
 print(f"DEBUG: Public Directory is {PUBLIC_DIR}")
 
-# --- 2. PREPROCESSING FUNCTIONS (Ορίζονται ΠΡΩΤΑ) ---
 
 def load_stopwords(filepath):
     try:
@@ -42,24 +38,18 @@ def load_stopwords(filepath):
         print(f"Warning: {filepath} not found.")
         return set()
 
-# Φόρτωση stopwords με σωστό path
 STOPWORDS_FILE = os.path.join(PUBLIC_DIR, 'dictionary', 'stopwords_stemmed.txt')
 stopwords = load_stopwords(STOPWORDS_FILE)
 
-# Regex compilers
 translator = str.maketrans(string.punctuation + '΄‘’“”«»…–', ' ' * (len(string.punctuation) + 9))
 digit_punct_cleaner = re.compile(r'(?<=\d)[\.,](?=\d)')
 
+# Apply to querry the same processing as in preprocess.py 
 def preprocess_query(text):
     if not text: return ""
-    
-    # 1. Lowercase and Remove specific number formatting like 1.000
+
     text = digit_punct_cleaner.sub('', text.lower())
-    
-    # 2. Remove Punctuation
     text = text.translate(translator)
-    
-    # 3. Split into words
     words = text.split()
     
     cleaned_words = []
@@ -82,12 +72,10 @@ def preprocess_query(text):
 
     return ' '.join(cleaned_words)
 
-
-# --- 3. ΦΟΡΤΩΣΗ ΜΟΝΤΕΛΩΝ ---
+#Load tfidf models and datafile with unprocessed speeches
 try:
     print("Loading models...")
     
-    # Paths με os.path.join
     vec_path = os.path.join(PUBLIC_DIR, 'search_models', 'tfidf_vectorizer_speech.joblib')
     mat_path = os.path.join(PUBLIC_DIR, 'search_models', 'tfidf_matrix_speech.joblib')
     csv_path = os.path.join(PUBLIC_DIR, 'clean_full_speeches.csv')
@@ -96,7 +84,6 @@ try:
     tfidf_matrix = joblib.load(mat_path) 
     df = pd.read_csv(csv_path).fillna('')
     
-    # Δημιουργία στήλης Year
     print("Processing dates...")
     df['date_obj'] = pd.to_datetime(df['sitting_date'], format='%d/%m/%Y', errors='coerce')
     df['year'] = df['date_obj'].dt.year.fillna(0).astype(int)
@@ -105,13 +92,11 @@ try:
 
 except Exception as e:
     print(f"CRITICAL ERROR loading models: {e}")
-    # Dummy data για να μην κρασάρει το API αν αποτύχει η φόρτωση
     df = pd.DataFrame()
     tfidf_matrix = None
     tfidf_vectorizer = None
 
 
-# --- 4. REQUEST MODELS ---
 class SearchQuery(BaseModel):
     query: str
     top_k: int = 10
@@ -120,8 +105,7 @@ class TrendQuery(BaseModel):
     word: str
 
 
-# --- 5. ENDPOINTS ---
-
+# Implements searching for speeches (1st tab of the website)
 @app.post("/search")
 def search_api(req: SearchQuery):
     if tfidf_matrix is None:
@@ -152,7 +136,7 @@ def search_api(req: SearchQuery):
     
     return {"results": results, "count": len(results)}
 
-
+# Implements searching for usage of a specific word through the years
 @app.post("/trend")
 def get_word_trend(req: TrendQuery):
     if tfidf_matrix is None:

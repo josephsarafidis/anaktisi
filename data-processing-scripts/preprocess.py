@@ -4,6 +4,9 @@ import string
 import random
 from greek_stemmer import stemmer
 
+#STEP 2 of processing
+#Process the speeches while removing the ones that are too short and create a csv file of processed version
+#and a csv file of unprocessed version
 
 INPUT_FILE = "data/Greek_Parliament_Proceedings_1989_2020.csv" 
 CLEAN_FILE = "parliament-search/public/clean.csv"
@@ -20,25 +23,10 @@ digit_punct_cleaner = re.compile(r'(?<=\d)[\.,](?=\d)')
 digit_punct_cleaner = re.compile(r'(?<=\d)[\.,](?=\d)')
 
 
-def stemming(preprocessed_data):
-    preprocessed_data1 = ''
-    index = 0
-    preprocessed_data = preprocessed_data.split(' ')
-    for word in preprocessed_data:
-        stemmed_word = stemmer.stem_word(word, 'VBG')
-        if stemmed_word.islower():
-            del preprocessed_data[index]
-        else:
-            preprocessed_data1 += stemmed_word.lower() + ' '
-        index += 1
-    return preprocessed_data1  
-
 def create_random_sample(INPUT_FILE, output_file, sample_size):
 
     print("Counting total lines...")
-    # PASS 1: Count total lines to determine the range
     with open(INPUT_FILE, 'r', encoding='utf-8', errors='ignore') as f:
-        # Subtract 1 for the header
         total_lines = sum(1 for line in f) - 1
     
     print(f"Total data lines found: {total_lines}")
@@ -83,22 +71,22 @@ def process_text_optimized(text, stopwords_list):
     # 1. Lowercase and Remove specific number formatting like 1.000
     text = digit_punct_cleaner.sub('', text.lower())
     
-    # 2. Remove Punctuation (Fastest method in Python)
+    # 2. Remove Punctuation 
     text = text.translate(translator)
     
-    # 3. Split into words
     words = text.split()
     
     cleaned_words = []
     
     for word in words:
+    # 3. Skip stopwords
         if word in stopwords_list or len(word) < 2:
             continue
-            
+    # 4. Stem    
         stemmed_upper = stemmer.stem_word(word.upper(), 'VBG')
         
         if stemmed_upper.islower():
-            continue # Skip this word
+            continue 
             
         stemmed_lower = stemmed_upper.lower()
         
@@ -144,6 +132,7 @@ def create_clean_csv(file_path, clean_file_path, clean_full_speeches_file_path, 
                     continue
                         
                 row[-1] = process_text_optimized(original_speech, stopwords)
+                #Skip speech if it is too short
                 if len(row[-1]) >= CHARACTER_LIMIT:
                     writer_clean.writerow(row)
                     row[-1] = original_speech
@@ -158,6 +147,7 @@ def create_clean_csv(file_path, clean_file_path, clean_full_speeches_file_path, 
     except FileNotFoundError:
         print(f"Σφάλμα: Το αρχείο {file_path} δεν βρέθηκε.")
 
-
+#OPTIONAL: Create another random sample of the original file
+#create_random_sample(INPUT_FILE, SAMPLE_FILE, 10000)
 create_clean_csv(SAMPLE_FILE, CLEAN_FILE, FULL_SPEECHES_FILE, STOPWORDS_FILE)
 

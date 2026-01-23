@@ -1,9 +1,9 @@
-/* Πρόσθεσε αυτό στην αρχή του App.css */
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
   padding: 0;
-  text-align: left; /* Βεβαιώνει ότι τα κείμενα δεν θα πάνε στο κέντρο/δεξιά */
+  text-align: left; 
   width: 100%;
 }
 

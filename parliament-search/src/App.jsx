@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import './App.css';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-// --- 1. Component Αναζήτησης (ΣΥΝΔΕΔΕΜΕΝΟ ΜΕ ΤΟ PYTHON API) ---
+
+// Search Component (connected with PYTHON API) 
 const SearchTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState([]);
@@ -11,7 +13,7 @@ const SearchTab = () => {
   const [error, setError] = useState(null);
 
   const handleSearch = async (e) => {
-    e.preventDefault(); // Αποφυγή refresh της σελίδας
+    e.preventDefault(); 
     
     if (!searchTerm.trim()) return;
 
@@ -20,7 +22,7 @@ const SearchTab = () => {
     setResults([]);
 
     try {
-      // Κλήση στο Python API
+      // Python API
       const response = await fetch('http://127.0.0.1:8000/search', {
         method: 'POST',
         headers: {
@@ -28,7 +30,7 @@ const SearchTab = () => {
         },
         body: JSON.stringify({ 
           query: searchTerm, 
-          top_k: 20  // Ζητάμε τα 20 πιο σχετικά
+          top_k: 20  // Show 20 most relative results
         }),
       });
 
@@ -80,10 +82,7 @@ const SearchTab = () => {
             <h3>{item.member_name} <span className="party-tag">{item.political_party}</span></h3>
             <small>{item.sitting_date} | Relevance Score: {item.score}</small>
             <hr/>
-            {/* Χρησιμοποιούμε το snippet που μας έστειλε το Python API */}
             <p style={{fontStyle: 'italic'}}>"{item.speech_snippet}"</p>
-            
-            {/* Κουμπί για να δει όλο το κείμενο (απλό implementation με alert για τώρα) */}
             <button 
                 onClick={() => alert(item.full_speech)}
                 style={{marginTop: '10px', fontSize: '0.8rem', cursor: 'pointer'}}
@@ -97,7 +96,7 @@ const SearchTab = () => {
   );
 };
 
-// --- 2. Component Keywords (Ανά Κόμμα) ---
+// Component Keywords (for each parliament party) 
 const KeywordsTab = () => {
   const [keywordsData, setKeywordsData] = useState([]);
 
@@ -135,12 +134,12 @@ const KeywordsTab = () => {
   );
 };
 
-// --- 3. Component Keywords (Ανά Βουλευτή) - ΜΕ ΚΟΥΜΠΙ & ΕΞΥΠΝΗ ΑΝΑΖΗΤΗΣΗ ---
+// Component Keywords (for each parliament member) - with search bar
 const KeywordsMemberTab = () => {
-  const [allData, setAllData] = useState([]); // Όλα τα δεδομένα από το CSV
-  const [searchInput, setSearchInput] = useState(''); // Τι γράφει ο χρήστης
-  const [filteredData, setFilteredData] = useState([]); // Τι εμφανίζεται στον πίνακα
-  const [hasSearched, setHasSearched] = useState(false); // Αν πατήθηκε το κουμπί
+  const [allData, setAllData] = useState([]); 
+  const [searchInput, setSearchInput] = useState(''); 
+  const [filteredData, setFilteredData] = useState([]); 
+  const [hasSearched, setHasSearched] = useState(false); 
 
   useEffect(() => {
     Papa.parse('search_models_csv/results_keywords_by_member_name.csv', {
@@ -151,7 +150,7 @@ const KeywordsMemberTab = () => {
     });
   }, []);
 
-  // Συνάρτηση για αφαίρεση τόνων και μικρά γράμματα (για καλύτερη αναζήτηση)
+
   const normalizeText = (text) => {
     return text
       .toLowerCase()
@@ -160,7 +159,7 @@ const KeywordsMemberTab = () => {
   };
 
   const handleSearchClick = (e) => {
-    e.preventDefault(); // Αποφυγή reload
+    e.preventDefault(); 
     
     if (!searchInput.trim()) {
         setFilteredData([]);
@@ -168,14 +167,11 @@ const KeywordsMemberTab = () => {
         return;
     }
 
-    // Λογική: Σπάμε το input σε λέξεις και ψάχνουμε αν ΟΛΕΣ υπάρχουν στο όνομα
     const searchTerms = normalizeText(searchInput).split(" ").filter(t => t.length > 0);
 
     const results = allData.filter(row => {
         if (!row.member_name) return false;
         const memberNameNormalized = normalizeText(row.member_name);
-
-        // Ελέγχουμε αν κάθε λέξη που έγραψε ο χρήστης υπάρχει μέσα στο όνομα του βουλευτή
         return searchTerms.every(term => memberNameNormalized.includes(term));
     });
 
@@ -187,7 +183,6 @@ const KeywordsMemberTab = () => {
     <div className="tab-content">
       <h2>Λέξεις-Κλειδιά ανά Βουλευτή</h2>
       
-      {/* Φόρμα Αναζήτησης */}
       <form onSubmit={handleSearchClick} className="search-container" style={{marginBottom: '20px'}}>
         <input
           type="text"
@@ -238,9 +233,8 @@ const KeywordsMemberTab = () => {
   );
 };
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-// --- 6. Component Trends (Γράφημα) ---
+// Component Trends (Graph for usage of word over the years) 
 const TrendsByYearTab = () => {
   const [word, setWord] = useState('');
   const [trendData, setTrendData] = useState([]);
@@ -335,7 +329,7 @@ const TrendsByYearTab = () => {
   );
 };
 
-// --- 4. Component Ομοιότητας (Similarity) ---
+// Component Similarity
 const SimilarityTab = () => {
   const [pairs, setPairs] = useState([]);
 
@@ -383,7 +377,7 @@ const SimilarityTab = () => {
   );
 };
 
-// --- 5. Component LSI / Clustering ---
+// Component LSI / Clustering 
 const ClusteringTab = () => {
   const [clusters, setClusters] = useState([]);
 
@@ -420,7 +414,7 @@ const ClusteringTab = () => {
   );
 };
 
-// --- ΚΥΡΙΟ APP COMPONENT ---
+// MAIN APP COMPONENT ---
 
 function App() {
   const [activeTab, setActiveTab] = useState('search');
