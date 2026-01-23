@@ -22,6 +22,7 @@ digit_punct_cleaner = re.compile(r'(?<=\d)[\.,](?=\d)')
 
 digit_punct_cleaner = re.compile(r'(?<=\d)[\.,](?=\d)')
 
+csv.field_size_limit(sys.maxsize)
 
 def create_random_sample(INPUT_FILE, output_file, sample_size):
 
