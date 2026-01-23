@@ -5,14 +5,10 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
 from greek_stemmer import stemmer
 import re  
-import csv
 import string
-import matplotlib.pyplot as plt
-import sys 
-import random
+
 
 # Αρχικοποίηση του App
 app = FastAPI()

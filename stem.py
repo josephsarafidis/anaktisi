@@ -1,5 +1,4 @@
 from greek_stemmer import stemmer
-import re
 
 # File paths
 output_file = "parliament-search/public/dictionary/stopwords_stemmed.txt"

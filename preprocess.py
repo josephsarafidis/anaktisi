@@ -1,10 +1,6 @@
 import re  
 import csv
-import pandas as pd
 import string
-import matplotlib.pyplot as plt
-import sys 
-from sklearn.feature_extraction.text import TfidfVectorizer
 import random
 from greek_stemmer import stemmer
 
