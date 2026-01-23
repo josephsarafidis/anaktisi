@@ -1,23 +1,20 @@
-import pandas as pd
+import os
+import re
+import string
 import joblib
+import pandas as pd
+import numpy as np
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from sklearn.metrics.pairwise import cosine_similarity
-import pandas as pd
 from greek_stemmer import stemmer
-import re  
-import string
 
-
-# Αρχικοποίηση του App
+# --- 1. SETUP & PATHS ---
 app = FastAPI()
 
-# --- ΡΥΘΜΙΣΗ CORS (Πολύ σημαντικό για το JSX Frontend) ---
-origins = [
-    "http://localhost:5173"  # Αν χρησιμοποιείς Vite
-]
-
+# Ρύθμιση CORS
+origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -26,86 +23,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- ΦΟΡΤΩΣΗ ΜΟΝΤΕΛΩΝ ΚΑΙ ΔΕΔΟΜΕΝΩΝ ---
-# Εδώ θα πρέπει να φορτώσεις τα αρχεία που έχεις σώσει
-# Αν δεν τα έχεις σώσει ακόμα, πες μου να σου πω πώς!
-try:
-    tfidf_vectorizer = joblib.load('../public/search_models/tfidf_vectorizer_speech.joblib') 
-    tfidf_matrix = joblib.load('../public/search_models/tfidf_matrix_speech.joblib') 
-    df = pd.read_csv('../public/clean_full_speeches.csv').fillna('')
-    
-    # === ΝΕΟ: Δημιουργία στήλης Year κατά τη φόρτωση ===
-    # Μετατρέπουμε το sitting_date σε datetime και βγάζουμε το έτος
-    # Υποθέτουμε ότι το date format είναι dd/mm/yyyy
-    print("Processing dates...")
-    df['date_obj'] = pd.to_datetime(df['sitting_date'], format='%d/%m/%Y', errors='coerce')
-    df['year'] = df['date_obj'].dt.year.fillna(0).astype(int)
-    
-    print("Models and Data loaded successfully!")
-except Exception as e:
-    print(f"Error loading: {e}")
-    df = pd.DataFrame()
-    tfidf_matrix = None
-    tfidf_vectorizer = None
+# === ΤΟ ΚΛΕΙΔΙ ΓΙΑ ΤΟ DOCKER ===
+# Βρίσκουμε πού είναι ΑΥΤΟ το αρχείο (api.py) -> /app/src
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Υπολογίζουμε τον φάκελο public relative με το src -> /app/public
+PUBLIC_DIR = os.path.join(BASE_DIR, '..', 'public')
 
-# ... (η preprocess_query παραμένει ίδια)
+print(f"DEBUG: Base Directory is {BASE_DIR}")
+print(f"DEBUG: Public Directory is {PUBLIC_DIR}")
 
-# --- ΝΕΟ REQUEST MODEL ---
-class TrendQuery(BaseModel):
-    word: str
-
-# --- ΝΕΟ ENDPOINT ΓΙΑ ΤΟ ΓΡΑΦΗΜΑ ---
-@app.post("/trend")
-def get_word_trend(req: TrendQuery):
-    if tfidf_matrix is None:
-        raise HTTPException(status_code=500, detail="Models not loaded")
-    
-    # 1. Καθαρίζουμε τη λέξη όπως στο search
-    processed_word = preprocess_query(req.word)
-    
-    # Αν μετά το καθάρισμα δεν έμεινε τίποτα (π.χ. ήταν stopword)
-    if not processed_word:
-        return {"data": []}
-
-    # Επειδή το processed_word μπορεί να είναι πολλές λέξεις αν έγραψε πρόταση,
-    # παίρνουμε την πρώτη ή κάνουμε loop. Ας υποθέσουμε ότι ψάχνει ΜΙΑ λέξη για trend.
-    target_token = processed_word.split()[0] if " " in processed_word else processed_word
-
-    # 2. Βρίσκουμε το index της λέξης στο λεξιλόγιο (Vocabulary)
-    if target_token not in tfidf_vectorizer.vocabulary_:
-        return {"data": [], "message": "Word not found in vocabulary"}
-    
-    word_index = tfidf_vectorizer.vocabulary_[target_token]
-
-    # 3. Παίρνουμε ολόκληρη τη στήλη για αυτή τη λέξη από τον πίνακα TF-IDF
-    # Αυτό μας δίνει το score της λέξης για ΚΑΘΕ ομιλία (sparse column)
-    word_scores = tfidf_matrix[:, word_index].toarray().flatten()
-
-    # 4. Φτιάχνουμε ένα προσωρινό DataFrame για να κάνουμε το GroupBy
-    # Χρησιμοποιούμε μόνο τα μη μηδενικά για ταχύτητα, αλλά εδώ το κάνουμε απλά:
-    temp_df = pd.DataFrame({
-        'year': df['year'],
-        'score': word_scores
-    })
-
-    # 5. Ομαδοποίηση ανά έτος και άθροισμα (ή mean)
-    # Το sum δείχνει τη συνολική χρήση/σημασία της λέξης εκείνη τη χρονιά
-    trend_data = temp_df[temp_df['year'] > 0].groupby('year')['score'].sum().reset_index()
-    
-    # Ταξινόμηση ανά έτος
-    trend_data = trend_data.sort_values('year')
-
-    # 6. Ετοιμασία JSON για το React
-    result = trend_data.to_dict(orient='records') # [{'year': 1989, 'score': 1.5}, ...]
-    
-    return {"data": result, "token": target_token}
-
-# --- ΤΟ ΜΟΝΤΕΛΟ ΤΟΥ REQUEST ---
-class SearchQuery(BaseModel):
-    query: str
-    top_k: int = 10  # Default επιστροφή 5 αποτελεσμάτων
-
-# --- ΣΥΝΑΡΤΗΣΗ PREPROCESSING ---
+# --- 2. PREPROCESSING FUNCTIONS (Ορίζονται ΠΡΩΤΑ) ---
 
 def load_stopwords(filepath):
     try:
@@ -115,24 +42,21 @@ def load_stopwords(filepath):
         print(f"Warning: {filepath} not found.")
         return set()
 
-
-translator = str.maketrans(string.punctuation + '΄‘’“”«»…–', ' ' * (len(string.punctuation) + 9))
-
-digit_punct_cleaner = re.compile(r'(?<=\d)[\.,](?=\d)')
-
-digit_punct_cleaner = re.compile(r'(?<=\d)[\.,](?=\d)') 
-
-STOPWORDS_FILE = '../public/dictionary/stopwords_stemmed.txt'
-
+# Φόρτωση stopwords με σωστό path
+STOPWORDS_FILE = os.path.join(PUBLIC_DIR, 'dictionary', 'stopwords_stemmed.txt')
 stopwords = load_stopwords(STOPWORDS_FILE)
 
+# Regex compilers
+translator = str.maketrans(string.punctuation + '΄‘’“”«»…–', ' ' * (len(string.punctuation) + 9))
+digit_punct_cleaner = re.compile(r'(?<=\d)[\.,](?=\d)')
 
 def preprocess_query(text):
-  
+    if not text: return ""
+    
     # 1. Lowercase and Remove specific number formatting like 1.000
     text = digit_punct_cleaner.sub('', text.lower())
     
-    # 2. Remove Punctuation (Fastest method in Python)
+    # 2. Remove Punctuation
     text = text.translate(translator)
     
     # 3. Split into words
@@ -147,7 +71,7 @@ def preprocess_query(text):
         stemmed_upper = stemmer.stem_word(word.upper(), 'VBG')
         
         if stemmed_upper.islower():
-            continue # Skip this word
+            continue 
             
         stemmed_lower = stemmed_upper.lower()
         
@@ -159,41 +83,102 @@ def preprocess_query(text):
     return ' '.join(cleaned_words)
 
 
-# --- ΤΟ ENDPOINT ---
+# --- 3. ΦΟΡΤΩΣΗ ΜΟΝΤΕΛΩΝ ---
+try:
+    print("Loading models...")
+    
+    # Paths με os.path.join
+    vec_path = os.path.join(PUBLIC_DIR, 'search_models', 'tfidf_vectorizer_speech.joblib')
+    mat_path = os.path.join(PUBLIC_DIR, 'search_models', 'tfidf_matrix_speech.joblib')
+    csv_path = os.path.join(PUBLIC_DIR, 'clean_full_speeches.csv')
+    
+    tfidf_vectorizer = joblib.load(vec_path) 
+    tfidf_matrix = joblib.load(mat_path) 
+    df = pd.read_csv(csv_path).fillna('')
+    
+    # Δημιουργία στήλης Year
+    print("Processing dates...")
+    df['date_obj'] = pd.to_datetime(df['sitting_date'], format='%d/%m/%Y', errors='coerce')
+    df['year'] = df['date_obj'].dt.year.fillna(0).astype(int)
+    
+    print("Models and Data loaded successfully!")
+
+except Exception as e:
+    print(f"CRITICAL ERROR loading models: {e}")
+    # Dummy data για να μην κρασάρει το API αν αποτύχει η φόρτωση
+    df = pd.DataFrame()
+    tfidf_matrix = None
+    tfidf_vectorizer = None
+
+
+# --- 4. REQUEST MODELS ---
+class SearchQuery(BaseModel):
+    query: str
+    top_k: int = 10
+
+class TrendQuery(BaseModel):
+    word: str
+
+
+# --- 5. ENDPOINTS ---
+
 @app.post("/search")
 def search_api(req: SearchQuery):
     if tfidf_matrix is None:
         raise HTTPException(status_code=500, detail="Models not loaded properly.")
 
-    # Βήμα 1: Καθαρισμός του query
     processed_query = preprocess_query(req.query)
     
-    # Βήμα 2: Μετατροπή σε TF-IDF vector
-    # Προσοχή: Χρησιμοποιούμε transform, ΟΧΙ fit_transform
+    if not processed_query:
+        return {"results": [], "count": 0}
+
     query_vec = tfidf_vectorizer.transform([processed_query])
-    
-    # Βήμα 3: Υπολογισμός ομοιότητας
-    # cosine_similarity επιστρέφει πίνακα (1, n_samples), θέλουμε το flatten
     similarities = cosine_similarity(query_vec, tfidf_matrix).flatten()
-    
-    # Βήμα 4: Εύρεση των top-k (argsort επιστρέφει δείκτες από μικρότερο σε μεγαλύτερο)
-    # Παίρνουμε τα τελευταία k και κάνουμε αναστροφή [::-1]
     top_indices = similarities.argsort()[-req.top_k:][::-1]
     
-    # Βήμα 5: Εξαγωγή αποτελεσμάτων
     results = []
     for idx in top_indices:
         score = similarities[idx]
-        if score > 0.05: # Φίλτρο: Αν η ομοιότητα είναι πολύ μικρή, αγνόησέ το (προαιρετικό)
+        if score > 0.05:
             row = df.iloc[idx]
             results.append({
                 "member_name": row['member_name'],
                 "sitting_date": row['sitting_date'],
                 "political_party": row['political_party'],
-                "speech_snippet": row['speech'][:300] + "...", # Επιστρέφουμε μόνο την αρχή για preview
-                "full_speech": row['speech'], # Όλη η ομιλία για να τη δείξεις στο modal/page
+                "speech_snippet": row['speech'][:300] + "...",
+                "full_speech": row['speech'],
                 "score": float(round(score, 4))
             })
     
     return {"results": results, "count": len(results)}
-# Για να το τρέξεις: uvicorn main:app --reload
+
+
+@app.post("/trend")
+def get_word_trend(req: TrendQuery):
+    if tfidf_matrix is None:
+        raise HTTPException(status_code=500, detail="Models not loaded")
+    
+    processed_word = preprocess_query(req.word)
+    
+    if not processed_word:
+        return {"data": []}
+
+    target_token = processed_word.split()[0] if " " in processed_word else processed_word
+
+    if target_token not in tfidf_vectorizer.vocabulary_:
+        return {"data": [], "message": "Word not found in vocabulary", "token": target_token}
+    
+    word_index = tfidf_vectorizer.vocabulary_[target_token]
+    word_scores = tfidf_matrix[:, word_index].toarray().flatten()
+
+    temp_df = pd.DataFrame({
+        'year': df['year'],
+        'score': word_scores
+    })
+
+    trend_data = temp_df[temp_df['year'] > 0].groupby('year')['score'].sum().reset_index()
+    trend_data = trend_data.sort_values('year')
+
+    result = trend_data.to_dict(orient='records')
+    
+    return {"data": result, "token": target_token}

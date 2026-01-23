@@ -102,7 +102,7 @@ const KeywordsTab = () => {
   const [keywordsData, setKeywordsData] = useState([]);
 
   useEffect(() => {
-    Papa.parse('public/search_models_csv/results_keywords_by_political_party.csv', {
+    Papa.parse('search_models_csv/results_keywords_by_political_party.csv', {
       download: true,
       header: true,
       skipEmptyLines: true,
@@ -143,7 +143,7 @@ const KeywordsMemberTab = () => {
   const [hasSearched, setHasSearched] = useState(false); // Αν πατήθηκε το κουμπί
 
   useEffect(() => {
-    Papa.parse('public/search_models_csv/results_keywords_by_member_name.csv', {
+    Papa.parse('search_models_csv/results_keywords_by_member_name.csv', {
       download: true,
       header: true,
       skipEmptyLines: true,
@@ -340,7 +340,7 @@ const SimilarityTab = () => {
   const [pairs, setPairs] = useState([]);
 
   useEffect(() => {
-    Papa.parse('public/similarity/top_similar_members.csv', {
+    Papa.parse('similarity/top_similar_members.csv', {
       download: true,
       header: true,
       skipEmptyLines: true,
@@ -388,7 +388,7 @@ const ClusteringTab = () => {
   const [clusters, setClusters] = useState([]);
 
   useEffect(() => {
-    Papa.parse('public/clustering_results/cluster_topic_analysis.csv', { 
+    Papa.parse('clustering_results/cluster_topic_analysis.csv', { 
       download: true, 
       header: true, 
       skipEmptyLines: true,

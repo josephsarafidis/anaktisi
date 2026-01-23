@@ -1,0 +1,23 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Αν το requirements.txt είναι χύμα στο anaktisi, το αφήνεις έτσι.
+# Αν είναι μέσα στο parliament-search, αλλάζεις σε: COPY parliament-search/requirements.txt .
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# --- ΤΑ ΣΩΣΤΑ PATHS ---
+# Αντιγράφουμε από το parliament-search/src μέσα στο container στο /app/src
+COPY parliament-search/src/ ./src
+
+# Αντιγράφουμε και το public
+COPY parliament-search/public/ ./public
+
+# Ρυθμίζουμε το Python Path
+ENV PYTHONPATH=/app/src
+
+EXPOSE 8000
+
+# Τρέχουμε το api:app
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--app-dir", "src"]
