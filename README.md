@@ -4,7 +4,7 @@ To run the app on localhost:\
 2)On terminal: sudo docker compose up --build\
 3)Open http://localhost:5174/ on browser\
 \
-To rebuild the processed csv files and tfidf matrices and vectorizers run all python scripts under /data-processing-scripts in the following order:\ 
+To rebuild the processed csv files and tfidf matrices and vectorizers run all python scripts under /data-processing-scripts in the following order:\
 \
 1)stem.py\
 2)preprocess.py\
