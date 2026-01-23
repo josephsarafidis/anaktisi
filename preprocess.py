@@ -10,10 +10,10 @@ from greek_stemmer import stemmer
 
 
 INPUT_FILE = "data/Greek_Parliament_Proceedings_1989_2020.csv" 
-CLEAN_FILE = "data/clean.csv"
-FULL_SPEECHES_FILE = "data/clean_full_speeches.csv"
+CLEAN_FILE = "parliament-search/public/clean.csv"
+FULL_SPEECHES_FILE = "parliament-search/public/clean_full_speeches.csv"
 SAMPLE_FILE = "data/random_sample.csv"
-STOPWORDS_FILE = 'dictionary/stopwords_stemmed.txt'
+STOPWORDS_FILE = 'parliament-search/public/dictionary/stopwords_stemmed.txt'
 
 CHARACTER_LIMIT = 50
 

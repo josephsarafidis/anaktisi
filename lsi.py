@@ -68,7 +68,7 @@ def perform_lsi_analysis(csv_path, n_topics=10):
     
     # Δημιουργία φακέλου αν δεν υπάρχει
     os.makedirs('lsi_results', exist_ok=True)
-    output_path = 'lsi_results/speech_vectors_lsi.csv'
+    output_path = 'parliament-search/public/lsi_results/speech_vectors_lsi.csv'
     
     final_df.to_csv(output_path, index=False, encoding='utf-8-sig')
     print(f"Επιτυχία! Το αρχείο αποθηκεύτηκε στο: {output_path}")
@@ -77,7 +77,7 @@ def perform_lsi_analysis(csv_path, n_topics=10):
     return lsi_matrix, lsi_model
 
 
-my_csv = 'data/clean.csv' 
+my_csv = 'parliament-search/public/clean.csv' 
     
 # Κάλεσε τη συνάρτηση (π.χ. για 10 θέματα)
 vectors, model = perform_lsi_analysis(my_csv, n_topics=10)

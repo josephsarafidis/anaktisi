@@ -2,7 +2,7 @@ from greek_stemmer import stemmer
 import re
 
 # File paths
-output_file = "dictionary/stopwords_stemmed.txt"
+output_file = "parliament-search/public/dictionary/stopwords_stemmed.txt"
 
 l_keywords = set([
     # --- Βασικά (Άρθρα, Αντωνυμίες, Προθέσεις, Σύνδεσμοι) ---
@@ -68,7 +68,6 @@ def create_stemmed_stopwords_file():
             f.write(s + '\n')
             
     print(f"Success! Created {output_file} with {len(unique_stems)} unique stems.")
-    print("You can now manually check this file to see if 'κυρι' is there.")
 
 
 create_stemmed_stopwords_file()

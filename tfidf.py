@@ -5,11 +5,9 @@ import os
 import sys
 import csv
 
-# --- Configuration ---
-input_file = "data/Greek_Parliament_Proceedings_1989_2020.csv" 
-clean_file = "data/clean.csv"
-sample_file = "data/random_sample.csv"
-stopwords_file = 'dictionary/stopwords_stemmed.txt'
+#configs
+clean_file = "parliament-search/public/clean.csv"
+stopwords_file = 'parliament-search/public/dictionary/stopwords_stemmed.txt'
 csv.field_size_limit(sys.maxsize)
 
 # --- Helper Function to Save Models ---
@@ -22,8 +20,8 @@ def save_model_files(vectorizer, matrix, name_suffix):
         os.makedirs('search_models')
     
     # Save with specific suffix
-    joblib.dump(vectorizer, f'search_models/tfidf_vectorizer_{name_suffix}.joblib')
-    joblib.dump(matrix, f'search_models/tfidf_matrix_{name_suffix}.joblib')
+    joblib.dump(vectorizer, f'parliament-search/public/search_models/tfidf_vectorizer_{name_suffix}.joblib')
+    joblib.dump(matrix, f'parliament-search/public/search_models/tfidf_matrix_{name_suffix}.joblib')
     print(f"Models saved in 'search_models' with suffix: _{name_suffix}")
 
 # --- Main Analysis Function ---
@@ -121,7 +119,7 @@ def analyze_group_keywords(csv_path, group_col, entity_name=None, top_n=20):
     results_df = pd.DataFrame(results_data)
     
     # Save to CSV (utf-8-sig is important for Greek characters in Excel)
-    output_filename = f"search_models_csv/results_keywords_by_{group_col}.csv"
+    output_filename = f"parliament-search/public/search_models_csv/results_keywords_by_{group_col}.csv"
     results_df.to_csv(output_filename, index=False, encoding='utf-8-sig')
     
     print(f"\nSuccess! Results saved to '{output_filename}'")

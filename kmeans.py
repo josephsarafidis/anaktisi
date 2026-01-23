@@ -42,7 +42,7 @@ def perform_clustering_on_existing_topics(input_csv, n_clusters=5):
     # Φτιάχνουμε φάκελο αν δεν υπάρχει
     os.makedirs('clustering_results', exist_ok=True)
     
-    output_filename = 'clustering_results/speeches_with_clusters.csv'
+    output_filename = 'parliament-search/public/clustering_results/speeches_with_clusters.csv'
     df.to_csv(output_filename, index=False, encoding='utf-8-sig')
     
     print(f"\nΕπιτυχία! Το αρχείο με τις ομάδες αποθηκεύτηκε στο: {output_filename}")
@@ -51,7 +51,7 @@ def perform_clustering_on_existing_topics(input_csv, n_clusters=5):
     # Αυτό βοηθάει να καταλάβεις τι σημαίνει η κάθε ομάδα (π.χ. η ομάδα 0 έχει πολύ υψηλό Topic 4)
     print("\nΥπολογισμός χαρακτηριστικών κάθε ομάδας...")
     cluster_means = df.groupby('Cluster_ID')[topic_cols].mean()
-    cluster_means.to_csv('clustering_results/cluster_topic_analysis.csv', encoding='utf-8-sig')
+    cluster_means.to_csv('parliament-search/public/clustering_results/cluster_topic_analysis.csv', encoding='utf-8-sig')
     print("Αποθηκεύτηκε και η ανάλυση των ομάδων στο 'cluster_topic_analysis.csv'")
 
 import pandas as pd
@@ -119,15 +119,15 @@ def print_speeches_by_cluster(csv_path, target_cluster_id, save_to_file=False):
 
 # Βάλε εδώ το όνομα του αρχείου που ΕΧΕΙΣ ΗΔΗ (με τα Topics)
 # Π.χ. 'lsi_results/speech_vectors_lsi.csv' ή όπως αλλιώς το λένε
-lsi_file = 'lsi_results/speech_vectors_lsi.csv' 
+lsi_file = 'parliament-search/public/lsi_results/speech_vectors_lsi.csv' 
 
 # Επιλέγεις πόσες ομάδες θες (π.χ. 5)
 perform_clustering_on_existing_topics(lsi_file, n_clusters=100)
 
 
 # Το αρχείο που έφτιαξες στο προηγούμενο βήμα
-speaches_with_clusters_file = "clustering_results/speeches_with_clusters.csv" 
+speaches_with_clusters_file = "parliament-search/public/clustering_results/speeches_with_clusters.csv" 
 
-print_speeches_by_cluster(speaches_with_clusters_file, target_cluster_id=27, save_to_file=True)    
+print_speeches_by_cluster(speaches_with_clusters_file, target_cluster_id=27)    
 
 

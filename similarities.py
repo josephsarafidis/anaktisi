@@ -9,7 +9,7 @@ def find_top_k_similar_members(clean_csv_path, k=10):
     # 1. Φόρτωση του έτοιμου Πίνακα TF-IDF για τα μέλη
     # Προϋπόθεση: Να έχει τρέξει ήδη το analyze_group_keywords(..., 'member_name')
     try:
-        tfidf_matrix = joblib.load('search_models/tfidf_matrix_member_name.joblib')
+        tfidf_matrix = joblib.load('parliament-search/public/search_models/tfidf_matrix_member_name.joblib')
         print("Ο πίνακας TF-IDF φορτώθηκε επιτυχώς.")
     except FileNotFoundError:
         print("Σφάλμα: Δεν βρέθηκε το μοντέλο. Τρέξε πρώτα το analyze_group_keywords για 'member_name'.")
@@ -66,9 +66,9 @@ def find_top_k_similar_members(clean_csv_path, k=10):
 
     # Προαιρετικά: Αποθήκευση σε CSV
     df_pairs = pd.DataFrame(pairs[:100], columns=['Similarity', 'Member A', 'Member B']) # Σώζουμε τα top 100
-    df_pairs.to_csv('similarity/top_similar_members.csv', index=False, encoding='utf-8-sig')
+    df_pairs.to_csv('parliament-search/public/similarity/top_similar_members.csv', index=False, encoding='utf-8-sig')
     print("\nΤα top-100 ζεύγη αποθηκεύτηκαν στο 'top_similar_members.csv'")
 
 
-input_file = "data/clean.csv"  # Ή το αρχείο που χρησιμοποίησες για το grouping
+input_file = "parliament-search/public/clean.csv"  # Ή το αρχείο που χρησιμοποίησες για το grouping
 find_top_k_similar_members(input_file, k=10)
