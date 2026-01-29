@@ -12,3 +12,4 @@ To rebuild the processed csv files and tfidf matrices and vectorizers run all py
 4)similarities.py\
 5)lsi.py\
 6)kmeans.py
+7)sentiments.py
