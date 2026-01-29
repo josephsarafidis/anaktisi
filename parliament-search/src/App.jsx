@@ -1,36 +1,38 @@
 import { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import './App.css';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 
 // Search Component (connected with PYTHON API) 
+
 const SearchTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState(null);
+  
+  // STATE για Modal
+  const [selectedSpeech, setSelectedSpeech] = useState(null);
 
-  const handleSearch = async (e) => {
-    e.preventDefault(); 
-    
-    if (!searchTerm.trim()) return;
+  // STATE για Pagination (πόσα αποτελέσματα ζητάμε)
+  const [currentTopK, setCurrentTopK] = useState(20);
 
+  // Κοινή συνάρτηση που καλεί το API
+  const fetchResults = async (query, kValue) => {
     setLoading(true);
     setError(null);
-    setResults([]);
-
+    
     try {
-      // Python API
       const response = await fetch('http://127.0.0.1:8000/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          query: searchTerm, 
-          top_k: 20  // Show 20 most relative results
+          query: query, 
+          top_k: kValue // Στέλνουμε δυναμικά το πόσα θέλουμε
         }),
       });
 
@@ -44,15 +46,40 @@ const SearchTab = () => {
 
     } catch (err) {
       console.error("Σφάλμα σύνδεσης με το API:", err);
-      setError("Δεν ήταν δυνατή η σύνδεση με τον server. Βεβαιώσου ότι το 'main.py' τρέχει.");
+      setError("Δεν ήταν δυνατή η σύνδεση με τον server.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Όταν πατάμε το κουμπί της φόρμας (Νέα αναζήτηση)
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!searchTerm.trim()) return;
+
+    // Reset στα 20 αποτελέσματα και καθαρισμός παλιών
+    setCurrentTopK(20);
+    setResults([]); 
+    
+    // Κλήση API
+    fetchResults(searchTerm, 20);
+  };
+
+  // Όταν πατάμε "Φόρτωση περισσότερων"
+  const handleLoadMore = () => {
+    const nextK = currentTopK + 20; // Αυξάνουμε κατά 20
+    setCurrentTopK(nextK);
+    // Ξανακαλούμε το API με το νέο όριο (π.χ. 40)
+    // Σημείωση: Στέλνουμε το ίδιο searchTerm
+    fetchResults(searchTerm, nextK);
+  };
+
+  const closeModal = () => setSelectedSpeech(null);
+
   return (
     <div className="tab-content">
-      <form onSubmit={handleSearch} className="search-container" style={{marginBottom: '20px',width: "50%", margin: "0 auto"}}>
+      {/* --- FORM --- */}
+      <form onSubmit={handleSearch} className="search-container" style={{marginBottom: '20px', width: "50%", margin: "0 auto"}}>
         <input
           type="text"
           placeholder="Αναζήτηση (π.χ. 'οικονομική κρίση', 'υγεία')..."
@@ -66,7 +93,7 @@ const SearchTab = () => {
           disabled={loading}
           style={{padding: '10px 20px', cursor: 'pointer'}}
         >
-          {loading ? 'Αναζήτηση...' : '🔍 Αναζήτηση'}
+          {loading && results.length === 0 ? 'Αναζήτηση...' : '🔍 Αναζήτηση'}
         </button>
       </form>
       
@@ -76,6 +103,7 @@ const SearchTab = () => {
         <p>Δεν βρέθηκαν αποτελέσματα για αυτό το query.</p>
       )}
 
+      {/* --- RESULTS GRID --- */}
       <div className="results-grid">
         {results.map((item, index) => (
           <div key={index} className="card">
@@ -83,15 +111,60 @@ const SearchTab = () => {
             <small>{item.sitting_date} | Relevance Score: {item.score}</small>
             <hr/>
             <p style={{fontStyle: 'italic'}}>"{item.speech_snippet}"</p>
+            
             <button 
-                onClick={() => alert(item.full_speech)}
-                style={{marginTop: '10px', fontSize: '0.8rem', cursor: 'pointer'}}
+                onClick={() => setSelectedSpeech(item.full_speech)}
+                style={{marginTop: '10px', fontSize: '0.8rem', cursor: 'pointer', backgroundColor: '#007bff', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px'}}
             >
                 Διαβάστε όλη την ομιλία
             </button>
           </div>
         ))}
       </div>
+
+      {/* --- LOAD MORE BUTTON --- */}
+      {/* Εμφανίζεται μόνο αν έχουμε αποτελέσματα και δεν φορτώνουμε αυτή τη στιγμή */}
+      {results.length > 0 && results.length >= currentTopK && (
+        <div style={{textAlign: 'center', margin: '30px 0'}}>
+          <button 
+            onClick={handleLoadMore}
+            disabled={loading}
+            style={{
+              padding: '12px 25px', 
+              fontSize: '1rem', 
+              cursor: 'pointer',
+              backgroundColor: loading ? '#ccc' : '#28a745', // Πράσινο κουμπί
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px'
+            }}
+          >
+            {loading ? 'Φόρτωση...' : '⬇ Φόρτωση περισσότερων'}
+          </button>
+        </div>
+      )}
+      
+      {/* --- MODAL (Ίδιο με πριν) --- */}
+      {selectedSpeech && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Πλήρης Ομιλία</h3>
+              <button onClick={closeModal} className="modal-close-btn">×</button>
+            </div>
+            <div className="modal-body">
+              <p style={{whiteSpace: 'pre-wrap', textAlign: 'justify'}}>
+                {selectedSpeech}
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button onClick={closeModal} className="modal-footer-btn">
+                Κλείσιμο
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -414,6 +487,60 @@ const ClusteringTab = () => {
   );
 };
 
+
+const SentimentTab = () => {
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    fetch('/sentiment_results.json')
+      .then(res => res.json())
+      .then(result => setData(result))
+      .catch(err => console.error("Error loading sentiment data:", err));
+  }, []);
+
+  return (
+    <div className="tab-content">
+      <h2>Διαχρονικό Συναίσθημα Βουλής (1989-2020)</h2>
+      <p>
+        Μέσος όρος θετικότητας/αρνητικότητας των ομιλιών ανά έτος. 
+        <br/>
+        <small>(Τιμές πάνω από 0 δείχνουν θετικό κλίμα, κάτω από 0 αρνητικό)</small>
+      </p>
+      
+      <div style={{ width: '100%', height: 450, background: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
+        {data.length > 0 ? (
+          <ResponsiveContainer>
+            <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="year" />
+              <YAxis domain={['auto', 'auto']} /> {/* Αυτόματο scale για να φαίνονται οι διακυμάνσεις */}
+              <Tooltip 
+                formatter={(value) => value.toFixed(4)} 
+                labelFormatter={(label) => `Έτος: ${label}`}
+                contentStyle={{ backgroundColor: '#333', color: '#fff' }}
+              />
+              
+              {/* Μια κόκκινη γραμμή στο 0 για να ξεχωρίζει το θετικό από το αρνητικό */}
+              <ReferenceLine y={0} stroke="red" strokeDasharray="3 3" />
+              
+              <Line 
+                type="monotone" 
+                dataKey="sentiment" 
+                stroke="#28a745" /* Πράσινη γραμμή */
+                strokeWidth={3}
+                dot={{ r: 3 }}
+                activeDot={{ r: 6 }}
+                name="Sentiment Score"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <p>Φόρτωση δεδομένων...</p>
+        )}
+      </div>
+    </div>
+  );
+};
 // MAIN APP COMPONENT ---
 
 function App() {
@@ -463,6 +590,12 @@ function App() {
         >
           Clustering / LSI
         </button>
+                <button 
+          className={activeTab === 'sentiments' ? 'active' : ''} 
+          onClick={() => setActiveTab('sentiments')}
+        >
+          Ανάλυση Συναισθήματος
+        </button>
       </nav>
 
       <main className="main-content">
@@ -472,6 +605,8 @@ function App() {
         {activeTab === 'keywords-year' && <TrendsByYearTab />}
         {activeTab === 'similarity' && <SimilarityTab />}
         {activeTab === 'clustering' && <ClusteringTab />}
+        {activeTab === 'sentiments' && <SentimentTab />}
+
       </main>
 
       <footer className="app-footer">
