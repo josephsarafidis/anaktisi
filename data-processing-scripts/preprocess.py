@@ -6,6 +6,8 @@ import random
 from greek_stemmer import stemmer
 from functools import lru_cache
 from multiprocessing import Pool, cpu_count
+import os
+
 
 #STEP 2 of processing
 #Process the speeches while removing the ones that are too short and create a csv file of processed version
@@ -27,6 +29,51 @@ csv.field_size_limit(sys.maxsize)
 
 # Global variable for the worker processes
 worker_stopwords = None
+
+
+def create_directory_structure():
+    """
+    Creates the 'data' and 'public' directories and all required subdirectories
+    within 'public', as specified by the user.
+    """
+    
+    # Define the base directories
+    base_dirs = ["data", "parliament-search/public"]
+    
+    # Define the subdirectories for the 'public' directory
+    public_subdirs = [
+        "clustering_results",
+        "dictionary",
+        "lsi_results",
+        "search_models",
+        "search_models_csv",
+        "similarity"
+    ]
+    
+    print("--- Starting directory creation ---")
+
+    # Create the base directories
+    for base_dir in base_dirs:
+        try:
+            # exist_ok=True prevents errors if the directory already exists
+            os.makedirs(base_dir, exist_ok=True)
+            print(f"Successfully created or confirmed: '{base_dir}/'")
+        except OSError as e:
+            print(f"Error creating '{base_dir}/': {e}")
+            
+    # Create the subdirectories within 'public'
+    for subdir in public_subdirs:
+        # Construct the full path using os.path.join for cross-platform compatibility
+        full_path = os.path.join("parliament-search/public", subdir)
+        try:
+            os.makedirs(full_path, exist_ok=True)
+            print(f"Successfully created or confirmed: '{full_path}/'")
+        except OSError as e:
+            print(f"Error creating '{full_path}/': {e}")
+            
+    print("--- Directory creation complete ---")
+
+
 
 @lru_cache(maxsize=100000)
 def cached_stem(word):
@@ -195,4 +242,5 @@ def create_clean_csv(file_path, clean_file_path, clean_full_speeches_file_path, 
 
 #OPTIONAL: Create another random sample of the original file
 #create_random_sample(INPUT_FILE, SAMPLE_FILE, 10000)
-create_clean_csv(INPUT_FILE, CLEAN_FILE, FULL_SPEECHES_FILE, STOPWORDS_FILE)
+create_directory_structure()
+#create_clean_csv(INPUT_FILE, CLEAN_FILE, FULL_SPEECHES_FILE, STOPWORDS_FILE)

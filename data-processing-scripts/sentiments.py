@@ -54,7 +54,7 @@ def calculate_sentiment(text):
 # --- 2. ΦΟΡΤΩΣΗ ---
 print("Φόρτωση δεδομένων...")
 # Προσοχή στο path του αρχείου σου
-df = pd.read_csv('../data/Greek_Parliament_Proceedings_1989_2020.csv', 
+df = pd.read_csv('parliament-search/public/clean_full_speeches.csv', 
                  usecols=['sitting_date', 'speech']) 
 
 df['sitting_date'] = pd.to_datetime(df['sitting_date'], format='%d/%m/%Y', errors='coerce')
@@ -75,7 +75,7 @@ final_result = df.groupby('year')['sentiment'].mean().reset_index()
 final_result['sentiment'] = final_result['sentiment'].round(4)
 
 # --- 5. EXPORT ---
-output_file = '../parliament-search/public/sentiment_results.json'
+output_file = 'parliament-search/public/sentiment_results.json'
 final_result.to_json(output_file, orient='records')
 print(f"Έτοιμο! Αποθηκεύτηκε στο {output_file}")
 # Θα παράγει κάτι σαν: [{"year":1989, "sentiment":0.05}, {"year":1990, "sentiment":-0.02}, ...]
