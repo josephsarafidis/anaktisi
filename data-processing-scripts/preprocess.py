@@ -13,7 +13,7 @@ import os
 #Process the speeches while removing the ones that are too short and create a csv file of processed version
 #and a csv file of unprocessed version
 
-INPUT_FILE = "data/Greek_Parliament_Proceedings_1989_2020.csv" 
+INPUT_FILE = "data/random_sample.csv" 
 CLEAN_FILE = "parliament-search/public/clean.csv"
 FULL_SPEECHES_FILE = "parliament-search/public/clean_full_speeches.csv"
 SAMPLE_FILE = "data/random_sample.csv"
@@ -242,5 +242,6 @@ def create_clean_csv(file_path, clean_file_path, clean_full_speeches_file_path, 
 
 #OPTIONAL: Create another random sample of the original file
 #create_random_sample(INPUT_FILE, SAMPLE_FILE, 10000)
+
 create_directory_structure()
 create_clean_csv(INPUT_FILE, CLEAN_FILE, FULL_SPEECHES_FILE, STOPWORDS_FILE)
