@@ -1,20 +1,13 @@
-# Χρησιμοποιούμε Node.js
 FROM node:22-alpine
 
-# Θέτουμε φάκελο εργασίας
 WORKDIR /app
 
-# Αντιγράφουμε τα package.json από τον υποφάκελο parliament
 COPY parliament-search/package*.json ./
 
-# Εγκατάσταση dependencies
 RUN npm install
 
-# Αντιγράφουμε τον υπόλοιπο κώδικα του frontend
 COPY parliament-search/ .
 
-# Ανοίγουμε την πόρτα του Vite (συνήθως 5173)
 EXPOSE 5173
 
-# Τρέχουμε το dev server με --host για να είναι προσβάσιμο έξω από το container
 CMD ["npm", "run", "dev", "--", "--host"]

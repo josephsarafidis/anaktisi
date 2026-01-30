@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # --- BACKEND SERVICE ---
   api:
     build:
       context: .
@@ -10,13 +9,11 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # ΔΙΟΡΘΩΣΗ: Πρέπει να δείχνεις τον σωστό υποφάκελο
       - ./parliament-search/src:/app/src       
       - ./parliament-search/public:/app/public 
     environment:
       - PYTHONUNBUFFERED=1
 
-  # --- FRONTEND SERVICE ---
   web:
     build:
       context: .
@@ -25,9 +22,6 @@ services:
     ports:
       - "5173:5173"
     volumes:
-      # Εδώ φαίνεται σωστό αν το frontend είναι χύμα μέσα στο parliament-search
-      # Αν το frontend είναι σε φάκελο parliament-search/parliament, θέλει αλλαγή και εδώ.
-      # Αλλά αφού το frontend δούλεψε, άσ' το έτσι προς το παρόν.
       - ./parliament-search:/app           
       - /app/node_modules           
     environment:
