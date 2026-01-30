@@ -9,8 +9,6 @@
 *.sln
 *.sw?
 
-parliament-search/public/
-data/
 # --- Python (Backend & Data Mining) ---
 # Virtual Environments (καλύπτει το /venv και τυχόν άλλα μέσα σε φακέλους)
 venv/
