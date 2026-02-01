@@ -3,12 +3,17 @@ FROM python:3.11-slim
 WORKDIR /app
 
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app
 
-COPY run_pipeline.sh /app/run_pipeline.sh
-RUN chmod +x /app/run_pipeline.sh
+# Copy the script to a system folder (/usr/local/bin) instead of /app
+# This ensures the volume mount at /app doesn't overwrite our executable script
+COPY run_pipeline.sh /usr/local/bin/run_pipeline.sh
+# Fix line endings (dos2unix) just in case, and make it executable
+RUN apt-get update && apt-get install -y dos2unix && \
+    dos2unix /usr/local/bin/run_pipeline.sh && \
+    chmod +x /usr/local/bin/run_pipeline.sh
 
-ENTRYPOINT ["/app/run_pipeline.sh"]
+# Update Entrypoint to point to the safe location
+ENTRYPOINT ["/usr/local/bin/run_pipeline.sh"]
